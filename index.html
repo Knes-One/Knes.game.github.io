@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Снежки Mac iOS 26</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;transition:background 0.3s;}
+
+/* --- Регистрация --- */
+#loginScreen{
+position:absolute;top:0;left:0;width:100%;height:100%;
+background:rgba(255,255,255,0.08);backdrop-filter:blur(25px);
+display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;z-index:1000;
+border-radius:16px;text-align:center;padding:10px;
+}
+#loginScreen input{margin:8px;padding:12px;border:none;border-radius:12px;width:80%;max-width:250px;font-size:16px;background:rgba(255,255,255,0.12);color:white;}
+#loginScreen input::placeholder{color:rgba(255,255,255,0.7);}
+#loginScreen button{margin-top:12px;padding:12px 24px;border:none;border-radius:12px;background:rgba(255,255,255,0.2);color:white;cursor:pointer;transition:0.3s;}
+#loginScreen button:hover{background:rgba(255,255,255,0.3);}
+
+/* --- Верхняя стеклянная панель --- */
+#topMenu{
+position:absolute;top:10px;left:50%;transform:translateX(-50%);
+background:rgba(255,255,255,0.08);
+backdrop-filter:blur(25px);
+padding:15px 30px;
+border-radius:20px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+color:white;
+width:90%;
+max-width:800px;
+box-shadow:0 8px 20px rgba(0,0,0,0.25);
+z-index:500;
+flex-wrap:wrap;
+}
+#topMenu .creator{
+display:flex;
+flex-direction:column;
+font-size:14px;
+line-height:1.2;
+}
+#topMenu .scoreSection{
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+/* --- Уровень и всплывающее уведомление --- */
+#levelDisplay{position:absolute;top:90px;left:50%;transform:translateX(-50%);color:white;font-size:16px;text-shadow:0 0 5px rgba(0,0,0,0.3);z-index:500;}
+#levelPopup {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%) scale(0);
+background: rgba(255,255,255,0.08);
+backdrop-filter: blur(25px);
+padding: 20px 35px;
+border-radius: 20px;
+text-align: center;
+color: white;
+z-index: 1001;
+box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+font-family: 'Segoe UI', sans-serif;
+transition: transform 0.4s ease, opacity 0.4s ease;
+opacity: 0;
+}
+#levelPopup.show {
+transform: translate(-50%, -50%) scale(1);
+opacity: 1;
+}
+#levelPopup h2 {margin: 0 0 5px 0;font-size: 20px;letter-spacing: 0.5px;}
+#levelPopup p {margin: 0;font-size: 16px;opacity: 0.8;}
+
+/* --- Ползунок фона --- */
+#sliderContainer{
+position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+width:90%;max-width:300px;background:rgba(255,255,255,0.12);backdrop-filter:blur(20px);
+padding:10px 15px;border-radius:18px;z-index:500;
+}
+#colorSlider{width:100%;-webkit-appearance:none;appearance:none;height:10px;border-radius:5px;background:rgba(255,255,255,0.3);cursor:pointer;}
+#colorSlider::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 0 5px rgba(0,0,0,0.3);}
+
+/* --- Корзинка --- */
+#basket{position:absolute;width:80px;height:25px;background:red;border-radius:12px;pointer-events:none;z-index:400;}
+
+/* --- Снежинки --- */
+.snowflake{position:absolute;width:10px;height:10px;background:white;border-radius:50%;opacity:0.8;z-index:300;}
+
+/* --- Инвентарь скинов --- */
+#skinInventory{
+position:absolute;top:10px;right:20px;background:rgba(255,255,255,0.08);backdrop-filter:blur(25px);padding:10px 15px;border-radius:16px;color:white;z-index:500;cursor:pointer;
+}
+#skinList{position:absolute;top:50px;right:20px;background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);padding:10px;border-radius:12px;display:none;max-width:150px;}
+.skinItem{margin:5px;padding:5px 10px;border-radius:8px;background:rgba(255,255,255,0.1);cursor:pointer;transition:0.3s;text-align:center;}
+.skinItem:hover{background:rgba(255,255,255,0.25);}
+</style>
+</head>
+<body>
+
+<!-- Регистрация -->
+<div id="loginScreen">
+<h2>Добро пожаловать!</h2>
+<input type="text" id="nickname" placeholder="Nickname">
+<input type="text" id="login" placeholder="Логин">
+<input type="password" id="password" placeholder="Пароль">
+<button id="startBtn">Старт</button>
+</div>
+
+<!-- Верхняя панель -->
+<div id="topMenu">
+<div class="creator">
+<div>Создатель: Дячук Александр</div>
+<div>Web-разработчик / Дизайнер</div>
+</div>
+<div class="scoreSection">
+<span id="score">Счёт: 0</span>
+<button id="stopBtn">Stop</button>
+</div>
+</div>
+
+<!-- Уровень и всплывающее уведомление -->
+<div id="levelDisplay">Уровень: 1</div>
+<div id="levelPopup">
+<h2>Новый уровень!</h2>
+<p id="levelNumber">Уровень: 1</p>
+</div>
+
+<!-- Ползунок -->
+<div id="sliderContainer"><input type="range" min="0" max="100" value="0" id="colorSlider"></div>
+
+<!-- Корзинка и скины -->
+<div id="basket"></div>
+<div id="skinInventory">Скины</div>
+<div id="skinList"></div>
+
+<script>
+const loginScreen=document.getElementById('loginScreen');
+const startBtn=document.getElementById('startBtn');
+const basket=document.getElementById('basket');
+const scoreEl=document.getElementById('score');
+const levelEl=document.getElementById('levelDisplay');
+const stopBtn=document.getElementById('stopBtn');
+const slider=document.getElementById('colorSlider');
+const skinInventory=document.getElementById('skinInventory');
+const skinList=document.getElementById('skinList');
+const levelPopup=document.getElementById('levelPopup');
+const levelNumber=document.getElementById('levelNumber');
+
+let score=0;
+let level=1;
+let snowflakes=[];
+let gameRunning=true;
+let basketAttached=true;
+let currentSkin='red';
+const levelThresholds=[10,25,50,75,100,150,200,250,300,400];
+const skinsByLevel=['red','blue','yellow','lime','green','purple','orange','pink','brown'];
+
+// --- Регистрация ---
+startBtn.addEventListener('click',()=>{
+const login=document.getElementById('login').value;
+const password=document.getElementById('password').value;
+const nickname=document.getElementById('nickname').value;
+if(login && password && nickname){
+localStorage.setItem('login',login);
+localStorage.setItem('password',password);
+localStorage.setItem('nickname',nickname);
+loginScreen.style.display='none';
+startGame();
+}else alert('Заполните все поля!');
+});
+
+// --- Ползунок для фона ---
+const body=document.body;
+const colorStops=[[0,0,0],[80,80,80],[245,233,220]]; // черный -> серый -> бежевый
+function lerpColor(a,b,t){return a.map((v,i)=>Math.round(v+(b[i]-v)*t));}
+function rgbToCss(rgb){return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;}
+slider.addEventListener('input',()=>{
+const t=slider.value/100*(colorStops.length-1);
+const i=Math.floor(t);
+const f=t-i;
+const c=lerpColor(colorStops[i],colorStops[i+1]||colorStops[i],f);
+body.style.background=rgbToCss(c);
+});
+
+// --- Корзинка к курсору ---
+document.addEventListener('mousemove',e=>{
+if(basketAttached){basket.style.left=e.clientX-basket.offsetWidth/2+'px';basket.style.top=e.clientY-basket.offsetHeight/2+'px';}
+});
+[document.getElementById('topMenu'),document.getElementById('sliderContainer'),skinInventory].forEach(el=>{
+el.addEventListener('mouseenter',()=>basketAttached=false);
+el.addEventListener('mouseleave',()=>basketAttached=true);
+});
+
+// --- Снежинки ---
+function createSnowflake(){
+const sf=document.createElement('div');
+sf.classList.add('snowflake');
+sf.style.left=Math.random()*(window.innerWidth-20)+'px';
+sf.style.top='-20px';
+sf.speed=1+Math.random()*2;
+document.body.appendChild(sf);
+snowflakes.push(sf);
+}
+function updateSnowflakes(){
+if(!gameRunning) return;
+for(let i=snowflakes.length-1;i>=0;i--){
+let sf=snowflakes[i];
+let top=parseFloat(sf.style.top);
+sf.style.top=top+sf.speed+'px';
+sf.style.left=parseFloat(sf.style.left)+Math.sin(top/50)*2+'px';
+const rect=basket.getBoundingClientRect();
+const sfRect=sf.getBoundingClientRect();
+if(rect.left<sfRect.right && rect.right>sfRect.left && rect.top<sfRect.bottom && rect.bottom>sfRect.top){
+score++; scoreEl.textContent='Счёт: '+score;
+sf.remove(); snowflakes.splice(i,1);
+checkLevel();
+}
+if(top>window.innerHeight){sf.remove();snowflakes.splice(i,1);}
+}
+}
+
+// --- Уровни и скины ---
+function showLevelPopup(level){
+levelNumber.textContent='Уровень: '+level;
+levelPopup.
+classList.add('show');
+setTimeout(()=>levelPopup.classList.remove('show'),3000);
+}
+
+function checkLevel(){
+if(score>=1000){
+levelEl.textContent='Секретный уровень';
+currentSkin='rainbow';
+basket.style.background='linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)';
+addSkinToInventory('rainbow');
+showLevelPopup('максимальный');
+return;
+}
+for(let i=levelThresholds.length-1;i>=0;i--){
+if(score>=levelThresholds[i] && level<=i+1){
+level=i+2;
+levelEl.textContent='Уровень: '+level;
+currentSkin=skinsByLevel[i]||'red';
+basket.style.background=currentSkin;
+addSkinToInventory(currentSkin);
+showLevelPopup(level);
+break;
+}
+}
+}
+
+function addSkinToInventory(color){
+const exists=[...skinList.children].some(el=>el.textContent===color);
+if(!exists){
+const div=document.createElement('div');
+div.classList.add('skinItem');
+div.textContent=color;
+div.addEventListener('click',()=>{currentSkin=color; basket.style.background=color; skinList.style.display='none';});
+skinList.appendChild(div);
+}
+}
+skinInventory.addEventListener('click',()=>{skinList.style.display=skinList.style.display==='none'?'block':'none';});
+
+// --- Главный цикл ---
+function gameLoop(){
+if(gameRunning){
+if(snowflakes.length<15) createSnowflake();
+updateSnowflakes();
+}
+requestAnimationFrame(gameLoop);
+}
+function startGame(){gameLoop();}
+stopBtn.addEventListener('click',()=>{gameRunning=!gameRunning;});
+</script>
+</body>
+</html>
